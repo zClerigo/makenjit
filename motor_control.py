@@ -15,23 +15,36 @@ class MotorController:
         self.MOTOR2_PIN = 33  # PWM pin for motor 2
         
         # PWM frequencies and initial duty cycles
-        self.PWM_FREQ = 1000  # 1 kHz
+        self.PWM_FREQ = 20000  # Increased to 20 kHz for better MOSFET switching
         self.initial_duty_cycle = 0  # Start with motors off
         
         # Setup GPIO
         GPIO.setmode(GPIO.BOARD)  # Use board pin numbering
-        GPIO.setup(self.MOTOR1_PIN, GPIO.OUT)
-        GPIO.setup(self.MOTOR2_PIN, GPIO.OUT)
+        GPIO.setwarnings(False)   # Disable warnings
+        
+        # Setup pins with initial LOW state
+        GPIO.setup(self.MOTOR1_PIN, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(self.MOTOR2_PIN, GPIO.OUT, initial=GPIO.LOW)
         
         # Initialize PWM
         self.motor1_pwm = GPIO.PWM(self.MOTOR1_PIN, self.PWM_FREQ)
         self.motor2_pwm = GPIO.PWM(self.MOTOR2_PIN, self.PWM_FREQ)
         
         # Start PWM with motors off
-        self.motor1_pwm.start(self.initial_duty_cycle)
-        self.motor2_pwm.start(self.initial_duty_cycle)
+        self.motor1_pwm.start(0)
+        self.motor2_pwm.start(0)
         
         print("Motor controller initialized")
+        
+        # Test GPIO output directly to verify pins are working
+        print("Testing direct GPIO output...")
+        GPIO.output(self.MOTOR1_PIN, GPIO.HIGH)
+        GPIO.output(self.MOTOR2_PIN, GPIO.HIGH)
+        time.sleep(1)
+        GPIO.output(self.MOTOR1_PIN, GPIO.LOW)
+        GPIO.output(self.MOTOR2_PIN, GPIO.LOW)
+        time.sleep(1)
+        print("Direct GPIO test completed")
     
     def set_motor1_speed(self, speed_percent):
         """
@@ -89,39 +102,32 @@ if __name__ == "__main__":
         
         print("Running motor test sequence...")
         
-        # Test motor 1
+        # Test motor 1 with higher duty cycle
         print("Testing Motor 1...")
-        controller.set_motor1_speed(50)  # 50% speed
-        time.sleep(2)
+        controller.set_motor1_speed(100)  # Full speed
+        time.sleep(3)
         controller.set_motor1_speed(0)   # Stop
         time.sleep(1)
         
-        # Test motor 2
+        # Test motor 2 with higher duty cycle
         print("Testing Motor 2...")
-        controller.set_motor2_speed(50)  # 50% speed
-        time.sleep(2)
+        controller.set_motor2_speed(100)  # Full speed
+        time.sleep(3)
         controller.set_motor2_speed(0)   # Stop
         time.sleep(1)
         
         # Test both motors
         print("Testing both motors...")
-        controller.set_both_motors_speed(75)  # 75% speed
+        controller.set_both_motors_speed(100)  # Full speed
         time.sleep(3)
-        
-        # Ramp up and down
-        print("Ramping motors up and down...")
-        for speed in range(0, 101, 10):
-            controller.set_both_motors_speed(speed)
-            time.sleep(0.5)
-        for speed in range(100, -1, -10):
-            controller.set_both_motors_speed(speed)
-            time.sleep(0.5)
         
         # Stop motors and clean up
         controller.stop_motors()
         
     except KeyboardInterrupt:
         print("Program stopped by user")
+    except Exception as e:
+        print(f"Error occurred: {e}")
     finally:
         if 'controller' in locals():
             controller.cleanup() 
